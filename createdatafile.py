@@ -2,10 +2,10 @@ import pandas as pd
 import createdatafilefunctions as cdf
 import time
 #from importlib import reload
-
+import pdb
 
 ### Initiate
-time.sleep(3)
+time.sleep(1)
 
 st = pd.Timestamp.now()
 print('Starting Analytical Dataset generation at: ', st)
@@ -49,14 +49,19 @@ datasets["bounce_info"] = cdf.getBounceData(conn, st)
 
 analytical_df = datasets['loan_info']
 del datasets['loan_info']
+
+
 for dname, dset in datasets.items():
+    #pdb.set_trace()
     analytical_df = pd.merge(analytical_df, dset, how='left', on='loan_id')
 
 time.sleep(1)
 
-### derived columns
+###
+cdf.writetodb(analytical_df, "analysisdata", st)
 
-df = cdf.createDerivedColumns(analytical_df, st)
+### derived columns
+analytical_df = cdf.createDerivedColumns(analytical_df, st)
 
 ### write to sqlitedb
 #for dname, dset in datasets.items():
@@ -64,5 +69,3 @@ df = cdf.createDerivedColumns(analytical_df, st)
 #    time.sleep(3)
 
 cdf.writetodb(analytical_df, "analysisdata", st)
-
-
