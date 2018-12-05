@@ -4,9 +4,10 @@ import pandas as pd
 import numpy as np
 
 
-def connecttodb(startTime):
+def connecttodb(startTime=pd.datetime.now()):
     print('Connecting to the data warehouse... ')
-    f = open('sohamkinaraconfig.json', 'r')
+    pathtoconfig = 'kinaraanalytics/sohamkinaraconfig.json'
+    f = open(pathtoconfig, 'r')
     config = json.load(f)
 
     connection = pymysql.connect(host=config['host'],
@@ -79,62 +80,7 @@ def getLoanSummaryInformationData(conn, startTime=pd.Timestamp.now()):
 
 def getScoresInformationData(conn, startTime):
     print('Fetching data from scores_information table... ')
-    q1 = '''
-    SELECT
-        loan_id,
-        BusinbusinessHistoryui,
-        BusinBusinessPremisesStatusui,
-        BusinBusinessVintageui,
-        BusinChequesBouncedui,
-        BusinCommercialCIBILui,
-        BusinEMIBouncedui,
-        BusinExistingCustomerui,
-        BusinFormalityOfTheBusinessui,
-        BusinProxyIndicatorScoreui,
-        BusinReferenceCheckScoreui,
-        BusinReferredByui,
-        BusinYearsofBusinesspresenceinAreaui,
-        ManagAgeui_APP,
-        ManagCBscoreui_APP,
-        ManagcustomerHouseStatusui_APP,
-        ManagExperienceInBusinessui_APP,
-        ManagInvolvementInBusinessui_APP,
-        ManagMaritalStatusui_APP,
-        ManagnoOfYearsOfResidenceinAreaui_APP,
-        ManagPsychometricScoreui_APP,
-        ManagQualificationui_APP,
-        ManagAgeui_COAPP,
-        ManagCBscoreui_COAPP,
-        ManagcustomerHouseStatusui_COAPP,
-        ManagExperienceInBusinessui_COAPP,
-        ManagInvolvementInBusinessui_COAPP,
-        ManagMaritalStatusui_COAPP,
-        ManagnoOfYearsOfResidenceinAreaui_COAPP,
-        ManagPsychometricScoreui_COAPP,
-        ManagQualificationui_COAPP,
-        `FinanABB:KinaraEMIui`,
-        `FinanAvgBankDeposit:AvgRevenueui`,
-        FinanChequesBouncedui,
-        FinanDSCRui,
-        FinanDSONonTradingui,
-        FinanDSOTradingui,
-        FinanEMIBouncedui,
-        `FinanKinaraEMI:NetIncomeui`,
-        FinannumberOfBouncesInKinaraLoanTrackui,
-        LoanPCurrentRatioui,
-        LoanPDSCRNewAssetIncomeui,
-        LoanPElectricityAvailabiltyui,
-        `LoanPHypothecationValue:LoanAmountui`,
-        LoanPHypothecatedStatusui,
-        LoanPloanProductTypeui,
-        LoanPLTVNewAssetui,
-        LoanPLTVUsedAssetui,
-        LoanPSocialImpactui,
-        LoanPSpaceAvailabilityui,
-        `LoanPTurnover:LoanAmountui`
-    FROM
-        scores_information
-    '''
+
     q = 'select * from Kinara_db.scores_userinputs;'
     df = pd.read_sql(q, con=conn)
     #drop columns that are either not needed or cause merge issues
@@ -328,7 +274,7 @@ def createVintageCats(df):
     df.BusinBusinessVintageui = pd.to_numeric(df.BusinBusinessVintageui)
     bins = [-5, 1, 2, 3, 4, 5, 7, 10, 20, 100]
     labels = labels = ['less1y', '1y', '2y', '3y', '4y', '5to7y', '7to10y', '10to20y', '20ymore']
-    dfcons['vintagecats'] = pd.cut(dfcons.BusinBusinessVintageui, bins = bins,\
+    df['vintagecats'] = pd.cut(df.BusinBusinessVintageui, bins = bins,\
        labels = labels)
     df.vintagecats = df.vintagecats.cat.add_categories(['missing'])
     df.vintagecats.fillna('missing', inplace=True)
@@ -498,7 +444,7 @@ def createCollateralCol(df):
             c = 'no'
         else:
             pc = str(rw.product_code)
-            pc  = pc[-1]
+            pc = pc[-1]
             if pc == "S":
                 c = "yes"
             elif pc == "U":
@@ -546,10 +492,10 @@ def cleanRejectReason(df):
 
     p = r"\br[a]?t[e]?"
     pex = r"machine"
-    reasons[(reasons.str.contains(p, case=False, na=False))&(~reasons.str.contains(pex, case=False, na=False))]='InterestRate'
+    reasons[(reasons.str.contains(p, case=False, na=False)) & (~reasons.str.contains(pex, case=False, na=False))]='InterestRate'
 
     p = r"am[ou]?[ou]?nt"
-    reasons[reasons.str.contains(p, case=False, na=False)]='LoanAmount'
+    reasons[reasons.str.contains(p, case=False, na=False)] = 'LoanAmount'
 
     p = r"en?t?r?y"
     reasons[reasons.str.contains(p, case=False, na=False)]='DoubleEntry'
@@ -661,7 +607,7 @@ def loadDisbursementReport(files):
     df['total_disbursement_amount'] = df.tranche_disbursed_amount + df.tranche2_disbursed_amount
 
     # create quarter variable
-    dfcons['disbursement_quarter'] = dfcons.\
+    df['disbursement_quarter'] = df.\
         apply(lambda rw: str(rw.tranche_disbursement_date.year)+'_'+str(rw.tranche_disbursement_date.quarter), axis=1)
 
     return df
