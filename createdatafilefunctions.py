@@ -6,7 +6,7 @@ import numpy as np
 
 def connecttodb(startTime=pd.datetime.now()):
     print('Connecting to the data warehouse... ')
-    pathtoconfig = 'kinaraanalytics/sohamkinaraconfig.json'
+    pathtoconfig = 'kinaraanalytics/kinaradbconfig.json'
     f = open(pathtoconfig, 'r')
     config = json.load(f)
 
@@ -587,7 +587,7 @@ def loadDisbursementReport(files):
     df = pd.read_excel(files[0])
     for f in files[1:]:
         dfx = pd.read_excel(f)
-        df = pd.concat([df, dfx])
+        df = pd.concat([df, dfx], sort=True)
     df.reset_index(drop=True, inplace=True)
 
     # replace blank disbursement amounts with sanction amount
@@ -634,11 +634,11 @@ def loadPortfolioOutsReport(f,q):
     df = pd.read_csv(contents)
 
     #rename columns
-    newname = 'principaloutstanding_'+q
+    newname = 'pos_'+q
     df.rename(columns = {df.columns[23]:newname}, inplace=True)
 
     #only keep accounts ids and principal outstanding columns
-    df = df[['account_id',newname]]
+    df = df[['account_id','Parent Branch', 'hub_name', newname]]
 
     #active accounts only
     df = df[(df[newname] > 0) & pd.notnull(df[newname])]
