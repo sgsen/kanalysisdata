@@ -6,7 +6,7 @@ import numpy as np
 
 def connecttodb(startTime=pd.datetime.now()):
     print('Connecting to the data warehouse... ')
-    pathtoconfig = 'kinaraanalytics/kinaradbconfig.json'
+    pathtoconfig = 'config_env/kinaradbconfig.json'
     f = open(pathtoconfig, 'r')
     config = json.load(f)
 
@@ -616,6 +616,18 @@ def load_parReport(f, q):
     df = pd.read_excel(f)
     colstokeep = ['account_number', 'PrincipalOutstanding', 'total_overdue', 'overdue_days', 'DPD Bucket']
     df = df[colstokeep]
+    df['PrincipalOutstanding90d'] = df.apply(lambda rw: rw.PrincipalOutstanding if rw.overdue_days > 90 else 0, axis = 1)
+    df.columns = [c.lower().replace(' ','').replace('_', '') +'par_' + q for c in df.columns]
+    df.rename(columns = {df.columns[0]:'account_id'}, inplace = True)
+    return df
+
+def load_odReport(f, q):
+    df = pd.read_excel(f)
+    colstokeep = ['account_number', 'PrincipalOutstanding', 'total_overdue', 'overdue_days']
+    df = df[colstokeep]
+    df.overdue_days = pd.to_numeric(df.overdue_days,  errors='coerce')
+    df.overdue_days.fillna(0, inplace=True)
+    df['PrincipalOutstanding30d'] = df.apply(lambda rw: rw.PrincipalOutstanding if rw.overdue_days > 30 else 0, axis = 1)
     df['PrincipalOutstanding90d'] = df.apply(lambda rw: rw.PrincipalOutstanding if rw.overdue_days > 90 else 0, axis = 1)
     df.columns = [c.lower().replace(' ','').replace('_', '') +'par_' + q for c in df.columns]
     df.rename(columns = {df.columns[0]:'account_id'}, inplace = True)
